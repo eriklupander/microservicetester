@@ -1,0 +1,19 @@
+---
+title: Microservices sample test file
+iterations: 1
+host: http://192.168.99.100
+services:
+  - http://192.168.99.100:8761
+  - http://192.168.99.100:8761/eureka/apps/config-server
+  - http://192.168.99.100:8761/eureka/apps/edge-server
+  - http://192.168.99.100:8761/eureka/apps/service-1
+  - http://192.168.99.100:8761/eureka/apps/service-2
+  - http://192.168.99.100:8761/eureka/apps/composite-service
+oauth:
+  url: https://acme:acmesecret@192.168.99.100:9999/uaa/oauth/token
+  client_id: acme
+  client_password: acmesecret
+  scope: webshop
+  grant_type: password
+  username: user
+  password: password
