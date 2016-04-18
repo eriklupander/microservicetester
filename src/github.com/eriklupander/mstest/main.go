@@ -2,7 +2,7 @@ package main
 
 import (
         "fmt"
-        "os/exec"
+        //"os/exec"
         "time"
        // "os"
         "net/http"
@@ -10,10 +10,7 @@ import (
         "log"
         //"io/ioutil"
         "sync"
-
-"strings"
-        "io/ioutil"
-        "encoding/base64"
+       // "os"
 )
 
 var consoleRow = 0
@@ -33,8 +30,8 @@ func main() {
         consoleRow++
 
         // 3. Start using docker-compose up -d
-        DockerComposeUp()
-        consoleRow++
+        DockerComposeUp(t)
+        consoleRow+=2
 
         // 4. Then wait for specified microservices
 
@@ -49,69 +46,54 @@ func main() {
                 wg.Add(1)
                 consoleRow++
                 go pollService(service, &wg, len(t.Services), consoleRow)
-
         }
 
-
-
-        // 5. When all are started, execute list of HTTP calls.
         wg.Wait()
 
-        // Fix cursor position
+        // Fix cursor position after all services have started
         consoleRow+=3
         fmt.Printf("\033[%d;0H", consoleRow)   // Move cursor to row
 
-        // Fix OAUTH token -d grant_type=password -d client_id=acme -d scope=webshop -d username=user -d password=password
+        // 5. When all are started, store OAuth token
+        StoreOAuthToken(t)
 
-        body := "grant_type=" + t.OAuth.Grant_type + "&client_id=" + t.OAuth.Client_id + "&scope=" + t.OAuth.Scope + "&username=" + t.OAuth.Username + "&password=" + t.OAuth.Password
-        reader := strings.NewReader(body)
-
-        //fmt.Println("OAuth data: " + t.OAuth.Url + " data: " + body)
-        postReq, err := http.NewRequest("POST", t.OAuth.Url, reader)
-        postReq.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-        //b64 := basicAuth(t.OAuth.Client_id, t.OAuth.Client_password)
-        //fmt.Println("Basic: " + b64)
-        //postReq.Header.Add("Authorization", "Basic " + b64)
-        postReq.SetBasicAuth(t.OAuth.Client_id, t.OAuth.Client_password)
-        if err != nil {
-            log.Fatal("Error constructing OAuth POST")
-        }
-        var DefaultTransport http.RoundTripper = &http.Transport{
-                TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-        }
-        resp, err := DefaultTransport.RoundTrip(postReq)
-        if err != nil {
-                fmt.Println(resp.Body)
-                fmt.Println(err)
-                log.Fatalf("OAuth request failed")
-        }  else {
-              respBody, _ := ioutil.ReadAll(resp.Body)
-              fmt.Println(string(respBody))
+        // 6. execute list of endpoint HTTP calls.
+        for _, endpoint := range t.Endpoints {
+                invokeEndpoint(endpoint)
         }
 
         // 6. Shut down
         time.Sleep(time.Second * 1)
+        DockerComposeDown(t)
 }
 
-func basicAuth(username string, password string) string {
-        auth := username + ":" + password
-        return base64.StdEncoding.EncodeToString([]byte(auth))
+func invokeEndpoint(endpoint Endpoint) {
+        req := buildHttpRequest(endpoint.Url)
+        var DefaultTransport http.RoundTripper = &http.Transport{
+                TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+        }
+        if endpoint.Auth_method == "TOKEN" {
+                fmt.Println("Setting auth token: " + TOKEN)
+                req.Header.Add("Authorization", "Bearer " + TOKEN)
+        } else if endpoint.Auth_method == "NONE" {
+                // Why??
+        }
+
+        resp, err := DefaultTransport.RoundTrip(req)
+        if err != nil {
+                log.Fatalln(endpoint.Url + " failed with error: " + err.Error())
+        } else if resp.StatusCode > 299 {
+                log.Fatalln(endpoint.Url + " failed with status: " + string(resp.StatusCode) + " " + resp.Status)
+        }
+        fmt.Println(endpoint.Url + " " + string(resp.StatusCode) + " " + resp.Status)
 }
 
 
-var l sync.Mutex
-
-func cprint(row int, col int, text string) {
-       l.Lock()
-                fmt.Printf("\033[%d;%dH", row, col)
-                fmt.Print(text)
-       l.Unlock()
-}
 
 func pollService(service string, wg *sync.WaitGroup, total int, consoleRow int) {
 
-        cprint(consoleRow, 0, service)
-        cprint(consoleRow, 60, "... waiting ")
+        Cprint(consoleRow, 0, service)
+        Cprint(consoleRow, 60, "... waiting ")
 
         req := buildHttpRequest(service)
         var DefaultTransport http.RoundTripper = &http.Transport{
@@ -121,11 +103,11 @@ func pollService(service string, wg *sync.WaitGroup, total int, consoleRow int) 
         for {
                 resp, err := DefaultTransport.RoundTrip(req)
                 if err != nil || resp.StatusCode > 299 {
-                        cprint(consoleRow, 0, service)
-                        cprint(consoleRow, 60, "... waiting ")
+                        Cprint(consoleRow, 0, service)
+                        Cprint(consoleRow, 60, "... waiting ")
                 }  else {
-                        cprint(consoleRow, 0, service)
-                        cprint(consoleRow, 60, "done                   ")
+                        Cprint(consoleRow, 0, service)
+                        Cprint(consoleRow, 60, "done                   ")
                         wg.Done()
                         return
                 }
@@ -143,11 +125,4 @@ func buildHttpRequest(url string) *http.Request {
         return req
 }
 
-func DockerComposeUp() {
-        cmd := exec.Command("docker-compose", "up", "-d")
-        // cmd.Stdout = os.Stdout
-        // cmd.Stderr = os.Stderr
-        cmd.Run()
-        fmt.Println("Docker starting up...")
-}
 

@@ -6,6 +6,8 @@ import (
         "os/exec"
         "runtime"
         //"time"
+        "sync"
+        "fmt"
 )
 
 var clear map[string]func() //create a map for storing clear funcs
@@ -36,4 +38,13 @@ func CallClear() {
         } else { //unsupported platform
                 panic("Your platform is unsupported! I can't clear terminal screen :(")
         }
+}
+
+var l sync.Mutex
+
+func Cprint(row int, col int, text string) {
+        l.Lock()
+        fmt.Printf("\033[%d;%dH", row, col)
+        fmt.Print(text)
+        l.Unlock()
 }
