@@ -10,6 +10,7 @@ import (
         "encoding/json"
 )
 
+// Global storage for a single token
 var TOKEN string
 
 func StoreOAuthToken(t TestDef) {
@@ -30,11 +31,9 @@ func StoreOAuthToken(t TestDef) {
                 log.Fatalf("OAuth request failed")
         }  else {
                 respBody, _ := ioutil.ReadAll(resp.Body)
-                fmt.Println(string(respBody))
                 var auth interface{}
                 err = json.Unmarshal(respBody, &auth)
                 m := auth.(map[string]interface{})
-                fmt.Println("Token: " + m[t.OAuth.Token_key].(string))
                 TOKEN = m[t.OAuth.Token_key].(string)
                 if err != nil {
                         fmt.Println("Error unmarshalling OAuth Token JSON")

@@ -23,3 +23,21 @@ oauth:
 endpoints:
   - url: https://192.168.99.100/api/composite/composite-resource/123
     auth_method: TOKEN # TOKEN|BASIC|NONE
+  - url: https://192.168.99.100/api/composite/composite-resource/999
+    auth_method: TOKEN
+  - url: https://192.168.99.100/api/composite/composite-resource/888
+    auth_method: TOKEN
+  - url: https://192.168.99.100/api/composite/composite-resource/777
+    auth_method: TOKEN
+  - url: https://192.168.99.100/api/composite/composite-resource/666
+    auth_method: TOKEN
+  - url: https://192.168.99.100/api/composite/composite-resource/555
+    auth_method: TOKEN
+  - url: https://192.168.99.100/api/composite/composite-resource/444
+    auth_method: TOKEN
+  - url: https://192.168.99.100/api/composite/composite-resource/332
+    auth_method: TOKEN
+  - url: https://192.168.99.100/api/composite/composite-resource/222
+    auth_method: TOKEN
+  - url: https://192.168.99.100/api/composite/composite-resource/111
+    auth_method: TOKEN

@@ -25,6 +25,7 @@ type OAuthDef struct {
 type Endpoint struct {
         Url string `yaml:"url"`
         Auth_method string `yaml:"auth_method"`
+        Method string `yaml:"method"`
 }
 
 
